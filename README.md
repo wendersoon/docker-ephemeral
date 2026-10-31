@@ -131,6 +131,7 @@ internal/reaper        safe teardown of session resources
 internal/engine        engine port, docker CLI adapter and in-memory fake
 ```
 
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 Commits follow [Conventional Commits](https://www.conventionalcommits.org).
 Releases are built by GoReleaser when a `v*` tag is pushed.
 
