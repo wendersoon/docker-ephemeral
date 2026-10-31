@@ -106,7 +106,7 @@ Docker global options work as usual, e.g. `docker --context remote ephemeral ls`
 
 ## Limitations
 
-See [Safety guarantees](https://wendersoon.github.io/docker-ephemeral/concepts/safety/) for details.
+See [Safety guarantees](https://wendersoon.github.io/docker-ephemeral/how-it-works/) for details.
 
 - `run` always runs in the foreground; use `up` for background workloads.
 - BuildKit cache is not pruned; use `docker builder prune` if needed.
