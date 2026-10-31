@@ -113,3 +113,29 @@ volumes:
 		t.Errorf("sessions left: %s", out)
 	}
 }
+
+func TestSharedImage_RemovedByLastSession(t *testing.T) {
+	requireDocker(t)
+	cfg := dockerConfig(t)
+	if mustDocker(t, cfg, "image", "ls", "-q", testImage) != "" {
+		t.Skipf("%s already present; refusing to touch it", testImage)
+	}
+
+	file := filepath.Join(t.TempDir(), "compose.yml")
+	if err := os.WriteFile(file, []byte("services:\n  hello:\n    image: "+testImage+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	first := mustDocker(t, cfg, "ephemeral", "up", "-f", file)
+	second := mustDocker(t, cfg, "ephemeral", "up", "-f", file)
+
+	mustDocker(t, cfg, "ephemeral", "down", first)
+	if mustDocker(t, cfg, "image", "ls", "-q", testImage) == "" {
+		t.Fatal("image removed while still used by another session")
+	}
+
+	mustDocker(t, cfg, "ephemeral", "down", second)
+	if out := mustDocker(t, cfg, "image", "ls", "-q", testImage); out != "" {
+		t.Errorf("shared image survived the last session: %s", out)
+	}
+}
