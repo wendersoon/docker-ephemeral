@@ -132,9 +132,22 @@ func (c *Client) RemoveImage(ctx context.Context, ref string) error {
 	return c.run(ctx, "image", "rm", ref)
 }
 
-// Compose implements engine.Engine.
-func (c *Client) Compose(ctx context.Context, project session.Compose, args []string) (int, error) {
-	res, err := c.exec.Execute(ctx, Command{Args: slices.Concat(composeArgs(project), args), Attached: true})
+// ComposeUp implements engine.Engine.
+func (c *Client) ComposeUp(ctx context.Context, project session.Compose, args []string) (int, error) {
+	res, err := c.exec.Execute(ctx, Command{
+		Args:           slices.Concat(composeArgs(project), []string{"up", "--detach"}, args),
+		Attached:       true,
+		StdoutToStderr: true,
+	})
+	return res.ExitCode, err
+}
+
+// ComposeLogs implements engine.Engine.
+func (c *Client) ComposeLogs(ctx context.Context, project session.Compose) (int, error) {
+	res, err := c.exec.Execute(ctx, Command{
+		Args:     slices.Concat(composeArgs(project), []string{"logs", "--follow"}),
+		Attached: true,
+	})
 	return res.ExitCode, err
 }
 

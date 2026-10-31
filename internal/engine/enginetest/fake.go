@@ -31,8 +31,8 @@ type Engine struct {
 
 	// OnCreate is called by CreateContainer to build the new container.
 	OnCreate func(args []string) engine.Container
-	// OnCompose is called by Compose; it may mutate the engine.
-	OnCompose func(e *Engine, project session.Compose, args []string) (int, error)
+	// OnComposeUp is called by ComposeUp; it may mutate the engine.
+	OnComposeUp func(e *Engine, project session.Compose, args []string) (int, error)
 	// ExitCode is returned by StartAttached.
 	ExitCode int
 }
@@ -212,12 +212,17 @@ func (e *Engine) RemoveImage(_ context.Context, ref string) error {
 	return nil
 }
 
-// Compose implements engine.Engine.
-func (e *Engine) Compose(_ context.Context, project session.Compose, args []string) (int, error) {
-	if e.OnCompose == nil {
+// ComposeUp implements engine.Engine.
+func (e *Engine) ComposeUp(_ context.Context, project session.Compose, args []string) (int, error) {
+	if e.OnComposeUp == nil {
 		return 0, nil
 	}
-	return e.OnCompose(e, project, args)
+	return e.OnComposeUp(e, project, args)
+}
+
+// ComposeLogs implements engine.Engine.
+func (e *Engine) ComposeLogs(context.Context, session.Compose) (int, error) {
+	return 0, nil
 }
 
 func (e *Engine) resolveImage(ref string) (id string, isTag bool) {

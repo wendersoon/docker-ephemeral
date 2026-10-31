@@ -49,10 +49,7 @@ func newFixture() *fixture {
 
 // composeStarts makes compose up create a container, a network and a volume.
 func (f *fixture) composeStarts(running bool) {
-	f.eng.OnCompose = func(e *enginetest.Engine, p session.Compose, args []string) (int, error) {
-		if args[0] != "up" {
-			return 0, nil
-		}
+	f.eng.OnComposeUp = func(e *enginetest.Engine, p session.Compose, _ []string) (int, error) {
 		sel := session.Label{Key: session.ComposeProjectLabelKey, Value: p.Project}
 		e.AddImage("img-"+p.Project, p.Project+"-web")
 		e.AddNetwork("net-"+p.Project, sel)
@@ -135,7 +132,7 @@ func TestUp_DetachedThenDown(t *testing.T) {
 
 func TestUp_FailureTearsDown(t *testing.T) {
 	f := newFixture()
-	f.eng.OnCompose = func(e *enginetest.Engine, p session.Compose, _ []string) (int, error) {
+	f.eng.OnComposeUp = func(e *enginetest.Engine, p session.Compose, _ []string) (int, error) {
 		e.AddNetwork("net", session.Label{Key: session.ComposeProjectLabelKey, Value: p.Project})
 		return 1, nil
 	}

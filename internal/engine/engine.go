@@ -71,7 +71,10 @@ type Engine interface {
 	// RemoveImage removes an image reference (tag or ID) without forcing.
 	RemoveImage(ctx context.Context, ref string) error
 
-	// Compose runs a docker compose subcommand attached to the terminal for
-	// the given project and returns its exit code.
-	Compose(ctx context.Context, project session.Compose, args []string) (int, error)
+	// ComposeUp runs "docker compose up --detach" with extra args, reporting
+	// progress on stderr, and returns its exit code.
+	ComposeUp(ctx context.Context, project session.Compose, args []string) (int, error)
+	// ComposeLogs follows the project logs until interrupted and returns the
+	// exit code of the command.
+	ComposeLogs(ctx context.Context, project session.Compose) (int, error)
 }

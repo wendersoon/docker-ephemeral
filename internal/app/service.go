@@ -140,7 +140,7 @@ func (s *Service) Up(ctx context.Context, req UpRequest) (UpResult, error) {
 		return result, nil
 	}
 
-	_, logsErr := s.engine.Compose(ctx, *sess.Compose, []string{"logs", "--follow"})
+	_, logsErr := s.engine.ComposeLogs(ctx, *sess.Compose)
 	result.Report, err = s.teardown(ctx, sess)
 	result.Destroyed = err == nil
 	return result, errors.Join(logsErr, err)
@@ -239,7 +239,7 @@ func (s *Service) create(ctx context.Context, sess *session.Session, args []stri
 }
 
 func (s *Service) composeUp(ctx context.Context, sess *session.Session, args []string) error {
-	code, err := s.engine.Compose(ctx, *sess.Compose, slices.Concat([]string{"up", "--detach"}, args))
+	code, err := s.engine.ComposeUp(ctx, *sess.Compose, args)
 	if err != nil {
 		return fmt.Errorf("docker compose up: %w", err)
 	}

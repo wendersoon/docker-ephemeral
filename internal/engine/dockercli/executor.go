@@ -26,6 +26,9 @@ type Command struct {
 	Attached bool
 	// ShowProgress streams stderr to the user while still capturing it.
 	ShowProgress bool
+	// StdoutToStderr sends the stdout of an attached command to stderr,
+	// keeping our own stdout free for machine-readable output.
+	StdoutToStderr bool
 }
 
 // Result is the outcome of a Command.
@@ -79,7 +82,7 @@ func NewProcessExecutor(binary string, globalFlags []string) *ProcessExecutor {
 func (p *ProcessExecutor) Execute(ctx context.Context, c Command) (Result, error) {
 	cmd := exec.CommandContext(ctx, p.Binary, slices.Concat(p.GlobalFlags, c.Args)...)
 	if c.Attached {
-		return p.attach(cmd)
+		return p.attach(cmd, c.StdoutToStderr)
 	}
 
 	var stdout, stderr bytes.Buffer
@@ -103,8 +106,11 @@ func (p *ProcessExecutor) Execute(ctx context.Context, c Command) (Result, error
 // attach runs cmd in the foreground. The child shares our process group, so
 // the terminal already delivers SIGINT to it; we only swallow it to survive
 // long enough to clean up, and forward termination signals sent to us alone.
-func (p *ProcessExecutor) attach(cmd *exec.Cmd) (Result, error) {
+func (p *ProcessExecutor) attach(cmd *exec.Cmd, stdoutToStderr bool) (Result, error) {
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = p.Stdin, p.Stdout, p.Stderr
+	if stdoutToStderr {
+		cmd.Stdout = p.Stderr
+	}
 	cmd.Cancel = func() error { return cmd.Process.Signal(syscall.SIGTERM) }
 	cmd.WaitDelay = shutdownGrace
 

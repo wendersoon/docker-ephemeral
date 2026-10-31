@@ -81,20 +81,23 @@ func TestStartAttached_Interactive(t *testing.T) {
 	}
 }
 
-func TestCompose_BuildsProjectArgs(t *testing.T) {
+func TestComposeUp_BuildsProjectArgs(t *testing.T) {
 	exec := &fakeExecutor{}
 	project := session.Compose{
 		Project: "ephemeral-x", ProjectDir: "/app",
 		Files: []string{"a.yml", "b.yml"}, EnvFiles: []string{".env"}, Profiles: []string{"dev"},
 	}
 
-	if _, err := New(exec).Compose(context.Background(), project, []string{"up", "--detach"}); err != nil {
+	if _, err := New(exec).ComposeUp(context.Background(), project, []string{"--build"}); err != nil {
 		t.Fatal(err)
 	}
 	want := "compose --project-name ephemeral-x --project-directory /app --file a.yml --file b.yml " +
-		"--env-file .env --profile dev up --detach"
+		"--env-file .env --profile dev up --detach --build"
 	if got := strings.Join(exec.calls[0].Args, " "); got != want {
 		t.Errorf("args = %q\nwant  %q", got, want)
+	}
+	if !exec.calls[0].StdoutToStderr {
+		t.Error("compose up output must not pollute stdout")
 	}
 }
 
