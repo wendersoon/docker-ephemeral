@@ -1,0 +1,94 @@
+site_name: docker ephemeral
+site_description: Docker CLI plugin that runs containers and Compose projects without leaving anything behind.
+site_url: https://wendersoon.github.io/docker-ephemeral/
+repo_url: https://github.com/wendersoon/docker-ephemeral
+repo_name: wendersoon/docker-ephemeral
+edit_uri: edit/main/docs/
+copyright: Copyright &copy; 2026 Wenderson Melo &mdash; MIT License
+
+theme:
+  name: material
+  logo: assets/logo.svg
+  favicon: assets/logo.svg
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue
+      accent: cyan
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue
+      accent: cyan
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - navigation.instant
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+    - content.code.annotate
+    - content.action.edit
+    - content.tabs.link
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - Installation: getting-started/installation.md
+      - Quick start: getting-started/quickstart.md
+  - Guide:
+      - Running containers: guide/run.md
+      - Compose projects: guide/compose.md
+      - Managing sessions: guide/sessions.md
+      - Recipes: guide/recipes.md
+  - Concepts:
+      - How it works: concepts/how-it-works.md
+      - Safety guarantees: concepts/safety.md
+  - Reference:
+      - Commands: reference/commands.md
+      - Labels and state: reference/state.md
+  - FAQ: faq.md
+  - Contributing: contributing.md
+  - Changelog: changelog.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+plugins:
+  - search
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/wendersoon/docker-ephemeral
