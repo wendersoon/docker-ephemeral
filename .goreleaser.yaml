@@ -1,0 +1,39 @@
+version: 2
+
+project_name: docker-ephemeral
+
+builds:
+  - main: ./cmd/docker-ephemeral
+    binary: docker-ephemeral
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X github.com/wendersoon/docker-ephemeral/internal/version.Version={{ .Version }}
+      - -X github.com/wendersoon/docker-ephemeral/internal/version.Commit={{ .ShortCommit }}
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+
+archives:
+  - formats: [binary]
+    name_template: "{{ .Binary }}-{{ .Os }}-{{ .Arch }}"
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  use: github
+  groups:
+    - title: Features
+      regexp: '^feat(\(.+\))?!?:'
+      order: 0
+    - title: Bug fixes
+      regexp: '^fix(\(.+\))?!?:'
+      order: 1
+    - title: Others
+      order: 999
+  filters:
+    exclude:
+      - '^(docs|test|chore|ci)(\(.+\))?:'
