@@ -188,3 +188,42 @@ func waitFor(t *testing.T, cond func() bool) {
 	}
 	t.Fatal("condition not met in time")
 }
+
+func TestDown_RestoresTagTakenFromExistingImage(t *testing.T) {
+	requireDocker(t)
+	cfg := dockerConfig(t)
+
+	const tag = "docker-ephemeral-test:restore"
+	if mustDocker(t, cfg, "image", "ls", "-q", tag) != "" {
+		t.Skipf("%s already present; refusing to touch it", tag)
+	}
+	pulled := mustDocker(t, cfg, "image", "ls", "-q", testImage) == ""
+	mustDocker(t, cfg, "pull", "-q", testImage)
+	mustDocker(t, cfg, "tag", testImage, tag)
+	t.Cleanup(func() {
+		_, _ = docker(t, cfg, "image", "rm", tag)
+		if pulled {
+			_, _ = docker(t, cfg, "image", "rm", testImage)
+		}
+	})
+	before := mustDocker(t, cfg, "image", "inspect", "--format", "{{.ID}}", tag)
+
+	// The session builds a different image under the same tag.
+	file := filepath.Join(t.TempDir(), "compose.yml")
+	compose := "services:\n  app:\n    image: " + tag + "\n    build:\n      context: .\n" +
+		"      dockerfile_inline: \"FROM " + testImage + "\\nLABEL session=1\"\n"
+	if err := os.WriteFile(file, []byte(compose), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	id := mustDocker(t, cfg, "ephemeral", "up", "-f", file, "--", "--build")
+	t.Cleanup(func() { _, _ = docker(t, cfg, "ephemeral", "down", id) })
+	if mustDocker(t, cfg, "image", "inspect", "--format", "{{.ID}}", tag) == before {
+		t.Fatal("test setup: the session did not take the tag over")
+	}
+
+	mustDocker(t, cfg, "ephemeral", "down", id)
+	if after := mustDocker(t, cfg, "image", "inspect", "--format", "{{.ID}}", tag); after != before {
+		t.Errorf("tag points to %s, want the original image %s", after, before)
+	}
+}
