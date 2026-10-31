@@ -11,7 +11,7 @@ For larger changes, open an issue first so we can agree on the approach.
 
 ## Development
 
-Requirements: Go 1.23+, Docker with Compose v2 and [golangci-lint](https://golangci-lint.run) v2.
+Requirements: Go 1.26+, Docker with Compose v2 and [golangci-lint](https://golangci-lint.run) v2.
 
 ```sh
 make build             # build into bin/
