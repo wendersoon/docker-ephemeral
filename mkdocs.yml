@@ -1,5 +1,5 @@
 site_name: docker ephemeral
-site_description: Docker CLI plugin that runs containers and Compose projects without leaving anything behind.
+site_description: Use Docker without piling up garbage.
 site_url: https://wendersoon.github.io/docker-ephemeral/
 repo_url: https://github.com/wendersoon/docker-ephemeral
 repo_name: wendersoon/docker-ephemeral
@@ -28,35 +28,22 @@ theme:
         icon: material/weather-sunny
         name: Switch to light mode
   features:
-    - navigation.top
-    - navigation.footer
-    - navigation.instant
-    - search.highlight
-    - search.suggest
     - content.code.copy
     - content.action.edit
-
-nav:
-  - Home: index.md
-  - Usage: usage.md
-  - How it works: how-it-works.md
-  - Commands: commands.md
-  - FAQ: faq.md
-  - Changelog: changelog.md
 
 markdown_extensions:
   - admonition
   - tables
   - toc:
       permalink: true
-  - pymdownx.details
   - pymdownx.highlight:
       anchor_linenums: true
-  - pymdownx.keys
   - pymdownx.superfences
 
-plugins:
-  - search
+plugins: []
+
+exclude_docs: |
+  requirements.txt
 
 extra:
   social:

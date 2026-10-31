@@ -1,50 +1,43 @@
+---
+hide:
+  - navigation
+  - toc
+---
+
 # docker ephemeral
 
-**Run containers and Compose projects that leave no trace behind.**
+**Use Docker without piling up garbage.**
 
-A Docker CLI plugin: when a workload stops, every container, network, volume
-and image it created is removed. Anything that was already on your machine is
-left untouched.
-
-```console
-$ docker ephemeral run -it python:3.13 python
-Unable to find image 'python:3.13' locally
-...
->>> exit()
-Session 3f2a91c04b7e removed: 1 container, 1 image
-```
-
-## Why not `--rm` or `compose down`?
-
-- `docker run --rm` keeps the pulled image and named volumes, and does nothing
-  if the client is killed.
-- `docker compose down -v --rmi all` also removes images **you already had**.
-
-`docker ephemeral` records what existed before the workload started and removes
-only what the workload added.
+Run a container or a Compose stack, and when you take it down, everything it
+created — containers, images, volumes and networks — is deleted with it.
+What you already had on your machine stays untouched.
 
 ## Install
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/wendersoon/docker-ephemeral/main/scripts/install.sh | sh
-docker ephemeral version
 ```
 
-The binary goes to `~/.docker/cli-plugins`. Binaries for Linux, macOS and
-Windows are also on the [releases page](https://github.com/wendersoon/docker-ephemeral/releases),
-and `make install` builds from source.
-
-## In 30 seconds
+## Use
 
 ```sh
-# A container: removed with its image and volumes when it exits
-docker ephemeral run --rm -it alpine sh
+# Run a container; when it exits, nothing is left behind
+docker ephemeral run -it alpine sh
 
-# A Compose stack: start it...
-docker ephemeral up --name demo
+# Start a Compose stack...
+docker ephemeral up --name app
 
-# ...and remove everything it created
-docker ephemeral down demo
+# ...and take it down with everything it created
+docker ephemeral down app
 ```
 
-Next: [Usage](usage.md).
+`run` accepts the same options as `docker run`, and `up` works with your
+existing `compose.yml`.
+
+| Command | What it does |
+| --- | --- |
+| `run` | Runs a container and deletes everything it created when it exits |
+| `up` | Starts a Compose stack in the background |
+| `down` | Takes a stack down and deletes everything it created |
+| `ls` | Lists what is running |
+| `gc` | Cleans up anything left by an interrupted run |

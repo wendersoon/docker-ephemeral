@@ -27,7 +27,7 @@ problem, but they:
 
 `docker ephemeral` tracks what each workload creates and removes exactly that.
 
-📖 **Full documentation: <https://wendersoon.github.io/docker-ephemeral/>**
+🌐 **Website: <https://wendersoon.github.io/docker-ephemeral/>**
 
 ## Installation
 
@@ -105,8 +105,6 @@ Docker global options work as usual, e.g. `docker --context remote ephemeral ls`
    finishes the job.
 
 ## Limitations
-
-See [Safety guarantees](https://wendersoon.github.io/docker-ephemeral/how-it-works/) for details.
 
 - `run` always runs in the foreground; use `up` for background workloads.
 - BuildKit cache is not pruned; use `docker builder prune` if needed.
