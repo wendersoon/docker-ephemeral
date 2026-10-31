@@ -1,7 +1,6 @@
 # docker ephemeral
 
 [![CI](https://github.com/wendersoon/docker-ephemeral/actions/workflows/ci.yml/badge.svg)](https://github.com/wendersoon/docker-ephemeral/actions/workflows/ci.yml)
-[![Docs](https://img.shields.io/badge/docs-wendersoon.github.io-blue)](https://wendersoon.github.io/docker-ephemeral/)
 [![Release](https://img.shields.io/github/v/release/wendersoon/docker-ephemeral)](https://github.com/wendersoon/docker-ephemeral/releases)
 
 A Docker CLI plugin that runs containers and Compose projects **without leaving
@@ -26,8 +25,6 @@ problem, but they:
 - leave named volumes created implicitly by `-v name:/path` behind.
 
 `docker ephemeral` tracks what each workload creates and removes exactly that.
-
-🌐 **Website: <https://wendersoon.github.io/docker-ephemeral/>**
 
 ## Installation
 
