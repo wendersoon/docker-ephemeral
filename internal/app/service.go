@@ -200,8 +200,15 @@ type sessionFactory func(id string, baseline session.Resources) *session.Session
 
 // begin snapshots the host and persists a new session before any resource is
 // created, so a crash never leaves untracked resources behind.
+//
+// Resources disposable by other active sessions are left out of the baseline:
+// they are shared, not pre-existing, and the last session using them removes them.
 func (s *Service) begin(ctx context.Context, name string, newSession sessionFactory) (*session.Session, error) {
-	if err := s.ensureNameAvailable(name); err != nil {
+	active, err := s.store.List()
+	if err != nil {
+		return nil, err
+	}
+	if err := ensureNameAvailable(active, name); err != nil {
 		return nil, err
 	}
 
@@ -218,7 +225,12 @@ func (s *Service) begin(ctx context.Context, name string, newSession sessionFact
 		return nil, err
 	}
 
-	sess := newSession(id, session.Resources{Images: images, Volumes: volumes})
+	baseline := session.Resources{Images: images, Volumes: volumes}
+	for _, other := range active {
+		baseline = baseline.Without(other.Disposable())
+	}
+
+	sess := newSession(id, baseline)
 	if err := s.store.Save(sess); err != nil {
 		return nil, err
 	}
@@ -314,13 +326,9 @@ func (s *Service) selectSessions(refs []string, all bool) ([]*session.Session, e
 	}
 }
 
-func (s *Service) ensureNameAvailable(name string) error {
+func ensureNameAvailable(sessions []*session.Session, name string) error {
 	if name == "" {
 		return nil
-	}
-	sessions, err := s.store.List()
-	if err != nil {
-		return err
 	}
 	for _, sess := range sessions {
 		if sess.Name == name || sess.ID == name {

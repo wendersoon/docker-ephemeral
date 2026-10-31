@@ -132,6 +132,38 @@ func TestUp_DetachedThenDown(t *testing.T) {
 	}
 }
 
+func TestSharedImage_RemovedByLastSession(t *testing.T) {
+	ctx := context.Background()
+	f := newFixture()
+	f.eng.OnComposeUp = func(e *enginetest.Engine, p session.Compose, _ []string) (int, error) {
+		e.AddImage("img-shared", "nginx:alpine")
+		sel := session.Label{Key: session.ComposeProjectLabelKey, Value: p.Project}
+		e.AddContainer(engine.Container{ID: "c-" + p.Project, ImageID: "img-shared", Running: true}, sel)
+		return 0, nil
+	}
+
+	for _, name := range []string{"a", "b"} {
+		if _, err := f.svc.Up(ctx, UpRequest{Name: name}); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	down, err := f.svc.Down(ctx, []string{"a"}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !f.eng.HasImage("img-shared") || len(down[0].Report.Skipped) != 1 {
+		t.Fatal("image still used by session b must be kept")
+	}
+
+	if _, err := f.svc.Down(ctx, []string{"b"}, false); err != nil {
+		t.Fatal(err)
+	}
+	if f.eng.HasImage("img-shared") {
+		t.Error("last session did not remove the shared image")
+	}
+}
+
 func TestUp_FailureTearsDown(t *testing.T) {
 	f := newFixture()
 	f.eng.OnComposeUp = func(e *enginetest.Engine, p session.Compose, _ []string) (int, error) {
