@@ -43,7 +43,13 @@ func run(args []string) int {
 	svc := app.NewService(eng, session.NewFileStore(dir), reaper.New(eng))
 
 	root := cli.NewRootCommand(svc, cli.BuildInfo{Version: version.Version, Commit: version.Commit})
-	err = cli.Execute(context.Background(), root, inv.Args)
+	ctx, stop, err := plugin.TerminationContext(context.Background())
+	if err != nil {
+		return fail(err)
+	}
+	defer stop()
+
+	err = cli.Execute(ctx, root, inv.Args)
 	var exitErr *cli.ExitError
 	if errors.As(err, &exitErr) {
 		return exitErr.Code

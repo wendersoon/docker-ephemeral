@@ -9,7 +9,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"os/signal"
 	"slices"
 	"strings"
 	"syscall"
@@ -103,9 +102,8 @@ func (p *ProcessExecutor) Execute(ctx context.Context, c Command) (Result, error
 	return Result{Stdout: stdout.Bytes()}, nil
 }
 
-// attach runs cmd in the foreground. The child shares our process group, so
-// the terminal already delivers SIGINT to it; we only swallow it to survive
-// long enough to clean up, and forward termination signals sent to us alone.
+// attach runs cmd in the foreground, connected to the terminal. When ctx is
+// canceled the child is asked to stop gracefully with SIGTERM.
 func (p *ProcessExecutor) attach(cmd *exec.Cmd, stdoutToStderr bool) (Result, error) {
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = p.Stdin, p.Stdout, p.Stderr
 	if stdoutToStderr {
@@ -114,30 +112,7 @@ func (p *ProcessExecutor) attach(cmd *exec.Cmd, stdoutToStderr bool) (Result, er
 	cmd.Cancel = func() error { return cmd.Process.Signal(syscall.SIGTERM) }
 	cmd.WaitDelay = shutdownGrace
 
-	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
-	defer signal.Stop(signals)
-
-	if err := cmd.Start(); err != nil {
-		return Result{}, fmt.Errorf("run docker: %w", err)
-	}
-
-	done := make(chan struct{})
-	defer close(done)
-	go func() {
-		for {
-			select {
-			case sig := <-signals:
-				if sig != os.Interrupt {
-					_ = cmd.Process.Signal(sig)
-				}
-			case <-done:
-				return
-			}
-		}
-	}()
-
-	err := cmd.Wait()
+	err := cmd.Run()
 	var exitErr *exec.ExitError
 	if errors.As(err, &exitErr) {
 		return Result{ExitCode: exitErr.ExitCode()}, nil
