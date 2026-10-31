@@ -1,6 +1,8 @@
 # docker ephemeral
 
 [![CI](https://github.com/wendersoon/docker-ephemeral/actions/workflows/ci.yml/badge.svg)](https://github.com/wendersoon/docker-ephemeral/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs-wendersoon.github.io-blue)](https://wendersoon.github.io/docker-ephemeral/)
+[![Release](https://img.shields.io/github/v/release/wendersoon/docker-ephemeral)](https://github.com/wendersoon/docker-ephemeral/releases)
 
 A Docker CLI plugin that runs containers and Compose projects **without leaving
 anything behind**. When the workload stops, every container, network, volume and
@@ -24,6 +26,8 @@ problem, but they:
 - leave named volumes created implicitly by `-v name:/path` behind.
 
 `docker ephemeral` tracks what each workload creates and removes exactly that.
+
+📖 **Full documentation: <https://wendersoon.github.io/docker-ephemeral/>**
 
 ## Installation
 
@@ -101,6 +105,8 @@ Docker global options work as usual, e.g. `docker --context remote ephemeral ls`
    finishes the job.
 
 ## Limitations
+
+See [Safety guarantees](https://wendersoon.github.io/docker-ephemeral/concepts/safety/) for details.
 
 - `run` always runs in the foreground; use `up` for background workloads.
 - BuildKit cache is not pruned; use `docker builder prune` if needed.
