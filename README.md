@@ -7,13 +7,7 @@ A Docker CLI plugin that runs containers and Compose projects **without leaving
 anything behind**. When the workload stops, every container, network, volume and
 image it created is removed. Anything that existed before is left alone.
 
-```console
-$ docker ephemeral run -it python:3.13 python
-Unable to find image 'python:3.13' locally
-...
->>> exit()
-Session 3f2a91c04b7e removed: 1 container, 1 image
-```
+![docker ephemeral demo: a container and a Compose stack are removed with the images they pulled, while an existing redis image is kept](assets/demo.gif)
 
 ## Why
 
