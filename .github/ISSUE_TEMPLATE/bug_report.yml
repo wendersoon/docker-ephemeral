@@ -1,0 +1,31 @@
+name: Bug report
+description: Something does not work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Include the command you ran and its output.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: docker ephemeral version
+      placeholder: output of `docker ephemeral version`
+    validations:
+      required: true
+  - type: input
+    id: docker
+    attributes:
+      label: Docker version and OS
+      placeholder: e.g. Docker 28.1.1, Compose 2.35.1, Ubuntu 24.04
+    validations:
+      required: true
