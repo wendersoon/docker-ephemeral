@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 
@@ -25,10 +26,32 @@ func New(exec Executor) *Client {
 	return &Client{exec: exec}
 }
 
-// ImageIDs implements engine.Engine.
-func (c *Client) ImageIDs(ctx context.Context) ([]string, error) {
-	ids, err := c.lines(ctx, "image", "ls", "--all", "--quiet", "--no-trunc")
-	return uniqueSorted(ids), err
+// Images implements engine.Engine.
+func (c *Client) Images(ctx context.Context) ([]engine.Image, error) {
+	rows, err := c.lines(ctx, "image", "ls", "--all", "--no-trunc", "--format", "{{.ID}} {{.Repository}}:{{.Tag}}")
+	if err != nil {
+		return nil, err
+	}
+	return parseImages(rows), nil
+}
+
+// parseImages groups "ID REPOSITORY:TAG" rows by image, ignoring untagged rows.
+func parseImages(rows []string) []engine.Image {
+	tags := map[string][]string{}
+	for _, row := range rows {
+		id, ref, _ := strings.Cut(row, " ")
+		if _, seen := tags[id]; !seen {
+			tags[id] = nil
+		}
+		if ref != "" && !strings.Contains(ref, "<none>") {
+			tags[id] = append(tags[id], ref)
+		}
+	}
+	images := make([]engine.Image, 0, len(tags))
+	for _, id := range slices.Sorted(maps.Keys(tags)) {
+		images = append(images, engine.Image{ID: id, Tags: tags[id]})
+	}
+	return images
 }
 
 // VolumeNames implements engine.Engine.
@@ -125,6 +148,11 @@ func (c *Client) ImageTags(ctx context.Context, id string) ([]string, error) {
 func (c *Client) ImageInUse(ctx context.Context, id string) (bool, error) {
 	ids, err := c.lines(ctx, "container", "ls", "--all", "--quiet", "--filter", "ancestor="+id)
 	return len(ids) > 0, err
+}
+
+// TagImage implements engine.Engine.
+func (c *Client) TagImage(ctx context.Context, id, ref string) error {
+	return c.run(ctx, "image", "tag", id, ref)
 }
 
 // RemoveImage implements engine.Engine.
@@ -238,9 +266,4 @@ func splitLines(b []byte) []string {
 		}
 	}
 	return out
-}
-
-func uniqueSorted(s []string) []string {
-	slices.Sort(s)
-	return slices.Compact(s)
 }

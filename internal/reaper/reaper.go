@@ -21,6 +21,7 @@ type Engine interface {
 	Volumes(ctx context.Context, selector session.Label) ([]string, error)
 	RemoveVolume(ctx context.Context, name string) error
 	ImageTags(ctx context.Context, id string) ([]string, error)
+	TagImage(ctx context.Context, id, ref string) error
 	ImageInUse(ctx context.Context, id string) (bool, error)
 	RemoveImage(ctx context.Context, ref string) error
 }
@@ -47,6 +48,9 @@ type Skip struct {
 type Report struct {
 	Removed map[Kind][]string
 	Skipped []Skip
+	// Restored lists tags given back to the image they pointed to before the
+	// session started.
+	Restored []string
 }
 
 // Count returns how many resources of kind were removed.
@@ -77,9 +81,13 @@ func New(e Engine) *Reaper {
 }
 
 // Reap removes, in dependency order, the containers, networks, volumes and
-// images of s. Resources from the session baseline are never touched, and
-// resources still used outside the session are skipped. Removal failures do
-// not stop the reap; they are joined into the returned error.
+// images of s.
+//
+// Only images and volumes recorded as owned when the session started are
+// candidates, never those of the baseline, and resources still used outside
+// the session are skipped. Tags the session took over from baseline images are
+// given back. Removal failures do not stop the reap; they are joined into the
+// returned error.
 func (r *Reaper) Reap(ctx context.Context, s *session.Session) (Report, error) {
 	rep := Report{Removed: map[Kind][]string{}}
 
@@ -87,17 +95,12 @@ func (r *Reaper) Reap(ctx context.Context, s *session.Session) (Report, error) {
 	if err != nil {
 		return rep, fmt.Errorf("list containers: %w", err)
 	}
-
-	owned := s.Owned
-	for _, c := range containers {
-		owned.Merge(c.Resources())
-	}
-	disposable := owned.Without(s.Baseline)
+	disposable := s.Disposable()
 
 	errs := []error{r.removeContainers(ctx, &rep, containers)}
 	errs = append(errs, r.removeNetworks(ctx, &rep, s.Selector))
 	errs = append(errs, r.removeVolumes(ctx, &rep, s.Selector, disposable.Volumes))
-	errs = append(errs, r.removeImages(ctx, &rep, disposable.Images))
+	errs = append(errs, r.removeImages(ctx, &rep, disposable.Images, s.BaselineTags))
 	return rep, errors.Join(errs...)
 }
 
@@ -140,17 +143,18 @@ func (r *Reaper) removeVolumes(ctx context.Context, rep *Report, sel session.Lab
 	return errors.Join(errs...)
 }
 
-func (r *Reaper) removeImages(ctx context.Context, rep *Report, ids []string) error {
+func (r *Reaper) removeImages(ctx context.Context, rep *Report, ids []string, baselineTags map[string]string) error {
 	var errs []error
 	for _, id := range ids {
-		errs = append(errs, rep.record(KindImage, id, r.removeImage(ctx, id)))
+		errs = append(errs, rep.record(KindImage, id, r.removeImage(ctx, rep, id, baselineTags)))
 	}
 	return errors.Join(errs...)
 }
 
-// removeImage deletes every tag of the image and then the image itself, unless
-// a container outside the session still depends on it.
-func (r *Reaper) removeImage(ctx context.Context, id string) error {
+// removeImage releases every tag of the image and then deletes it, unless a
+// container outside the session still depends on it. A tag that belonged to
+// another image before the session started is moved back to that image.
+func (r *Reaper) removeImage(ctx context.Context, rep *Report, id string, baselineTags map[string]string) error {
 	inUse, err := r.engine.ImageInUse(ctx, id)
 	if err != nil {
 		return err
@@ -164,6 +168,16 @@ func (r *Reaper) removeImage(ctx context.Context, id string) error {
 		return err
 	}
 	for _, tag := range tags {
+		if previous, ok := baselineTags[tag]; ok && previous != id {
+			err := r.engine.TagImage(ctx, previous, tag)
+			if err == nil {
+				rep.Restored = append(rep.Restored, tag)
+				continue
+			}
+			if !errors.Is(err, engine.ErrNotFound) {
+				return err
+			}
+		}
 		if err := r.engine.RemoveImage(ctx, tag); err != nil && !errors.Is(err, engine.ErrNotFound) {
 			return err
 		}

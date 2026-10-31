@@ -89,8 +89,37 @@ func (e *Engine) HasNetwork(id string) bool { return has(e, e.networks, id) }
 // HasContainer reports whether the container exists.
 func (e *Engine) HasContainer(id string) bool { return has(e, e.containers, id) }
 
-// ImageIDs implements engine.Engine.
-func (e *Engine) ImageIDs(context.Context) ([]string, error) { return sortedKeys(e, e.images), nil }
+// Images implements engine.Engine.
+func (e *Engine) Images(context.Context) ([]engine.Image, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	images := make([]engine.Image, 0, len(e.images))
+	for _, id := range slices.Sorted(maps.Keys(e.images)) {
+		images = append(images, engine.Image{ID: id, Tags: slices.Clone(e.images[id])})
+	}
+	return images, nil
+}
+
+// TagImage implements engine.Engine.
+func (e *Engine) TagImage(_ context.Context, id, ref string) error {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if _, ok := e.images[id]; !ok {
+		return engine.ErrNotFound
+	}
+	for other, tags := range e.images {
+		e.images[other] = slices.DeleteFunc(tags, func(t string) bool { return t == ref })
+	}
+	e.images[id] = append(e.images[id], ref)
+	return nil
+}
+
+// Tags returns the tags of an image.
+func (e *Engine) Tags(id string) []string {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return slices.Clone(e.images[id])
+}
 
 // VolumeNames implements engine.Engine.
 func (e *Engine) VolumeNames(context.Context) ([]string, error) { return sortedKeys(e, e.volumes), nil }

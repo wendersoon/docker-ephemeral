@@ -15,6 +15,12 @@ var (
 	ErrInUse    = errors.New("resource in use")
 )
 
+// Image is an image present on the host.
+type Image struct {
+	ID   string
+	Tags []string
+}
+
 // Container is the subset of container state the application relies on.
 type Container struct {
 	ID          string
@@ -36,8 +42,8 @@ func (c Container) Resources() session.Resources {
 
 // Engine is the set of operations required from a container engine.
 type Engine interface {
-	// ImageIDs returns the IDs of every image present on the host.
-	ImageIDs(ctx context.Context) ([]string, error)
+	// Images returns every image present on the host with its tags.
+	Images(ctx context.Context) ([]Image, error)
 	// VolumeNames returns the names of every volume present on the host.
 	VolumeNames(ctx context.Context) ([]string, error)
 
@@ -68,6 +74,8 @@ type Engine interface {
 	ImageTags(ctx context.Context, id string) ([]string, error)
 	// ImageInUse reports whether any container uses the image.
 	ImageInUse(ctx context.Context, id string) (bool, error)
+	// TagImage points ref to the image id, moving the tag if it exists.
+	TagImage(ctx context.Context, id, ref string) error
 	// RemoveImage removes an image reference (tag or ID) without forcing.
 	RemoveImage(ctx context.Context, ref string) error
 

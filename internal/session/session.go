@@ -79,7 +79,11 @@ type Session struct {
 	// Baseline holds the resources that existed before the session started;
 	// they are never removed.
 	Baseline Resources `json:"baseline"`
-	// Owned holds the resources observed in use by the session.
+	// BaselineTags maps every tag of the baseline to its image, so a tag moved
+	// by the session (e.g. by pulling a newer image) can be given back.
+	BaselineTags map[string]string `json:"baselineTags,omitempty"`
+	// Owned holds the resources used by the session's containers when it
+	// started. Resources first used later are never considered owned.
 	Owned Resources `json:"owned"`
 }
 

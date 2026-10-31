@@ -111,6 +111,21 @@ func TestImageTags(t *testing.T) {
 	}
 }
 
+func TestImages_GroupsTagsByID(t *testing.T) {
+	exec := &fakeExecutor{responses: map[string]Result{
+		"image ls --all --no-trunc --format {{.ID}} {{.Repository}}:{{.Tag}}": {Stdout: []byte(
+			"sha256:b app:1\nsha256:a <none>:<none>\nsha256:b app:latest\n")},
+	}}
+	got, err := New(exec).Images(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []engine.Image{{ID: "sha256:a"}, {ID: "sha256:b", Tags: []string{"app:1", "app:latest"}}}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("Images() = %+v, want %+v", got, want)
+	}
+}
+
 func TestClassify(t *testing.T) {
 	tests := map[string]error{
 		"Error response from daemon: No such volume: x":                                  engine.ErrNotFound,

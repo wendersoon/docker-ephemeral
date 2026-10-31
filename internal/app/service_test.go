@@ -132,6 +132,29 @@ func TestUp_DetachedThenDown(t *testing.T) {
 	}
 }
 
+func TestRun_RestoresTagUpdatedBySession(t *testing.T) {
+	f := newFixture()
+	// The session pulls a newer alpine:latest, which takes the tag over.
+	f.eng.OnCreate = func([]string) engine.Container {
+		f.eng.AddImage("img-newer")
+		if err := f.eng.TagImage(context.Background(), "img-newer", "alpine:latest"); err != nil {
+			t.Fatal(err)
+		}
+		return engine.Container{ID: "c1", ImageID: "img-newer"}
+	}
+
+	res, err := f.svc.Run(context.Background(), []string{"--pull", "always", "alpine"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f.eng.HasImage("img-newer") {
+		t.Error("newer image survived")
+	}
+	if got := f.eng.Tags("img-base"); !slices.Equal(got, []string{"alpine:latest"}) {
+		t.Errorf("tag not restored: %v (%+v)", got, res.Report)
+	}
+}
+
 func TestSharedImage_RemovedByLastSession(t *testing.T) {
 	ctx := context.Background()
 	f := newFixture()

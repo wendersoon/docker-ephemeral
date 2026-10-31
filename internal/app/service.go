@@ -212,7 +212,7 @@ func (s *Service) begin(ctx context.Context, name string, newSession sessionFact
 		return nil, err
 	}
 
-	images, err := s.engine.ImageIDs(ctx)
+	images, err := s.engine.Images(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("snapshot images: %w", err)
 	}
@@ -225,12 +225,16 @@ func (s *Service) begin(ctx context.Context, name string, newSession sessionFact
 		return nil, err
 	}
 
-	baseline := session.Resources{Images: images, Volumes: volumes}
+	baseline := session.Resources{Volumes: volumes}
+	for _, img := range images {
+		baseline.Images = append(baseline.Images, img.ID)
+	}
 	for _, other := range active {
 		baseline = baseline.Without(other.Disposable())
 	}
 
 	sess := newSession(id, baseline)
+	sess.BaselineTags = tagsOf(images, baseline.Images)
 	if err := s.store.Save(sess); err != nil {
 		return nil, err
 	}
@@ -365,6 +369,20 @@ func absolutize(c session.Compose) (session.Compose, error) {
 		return session.Compose{}, fmt.Errorf("resolve compose paths: %w", err)
 	}
 	return out, nil
+}
+
+// tagsOf maps the tags of the given images to their IDs.
+func tagsOf(images []engine.Image, ids []string) map[string]string {
+	tags := map[string]string{}
+	for _, img := range images {
+		if !slices.Contains(ids, img.ID) {
+			continue
+		}
+		for _, t := range img.Tags {
+			tags[t] = img.ID
+		}
+	}
+	return tags
 }
 
 func countRunning(containers []engine.Container) int {

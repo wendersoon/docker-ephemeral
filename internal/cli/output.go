@@ -13,6 +13,9 @@ const shortIDLength = 12
 
 func printTeardown(w io.Writer, t app.Teardown) {
 	fmt.Fprintf(w, "Session %s removed: %s\n", t.Session.DisplayName(), t.Report)
+	for _, tag := range t.Report.Restored {
+		fmt.Fprintf(w, "  restored tag %s to its previous image\n", tag)
+	}
 	for _, s := range t.Report.Skipped {
 		fmt.Fprintf(w, "  kept %s %s: %s\n", s.Kind, shortID(s.ID), s.Reason)
 	}
