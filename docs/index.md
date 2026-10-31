@@ -41,3 +41,10 @@ existing `compose.yml`.
 | `down` | Takes a stack down and deletes everything it created |
 | `ls` | Lists what is running |
 | `gc` | Cleans up anything left by an interrupted run |
+
+!!! warning "What gets deleted"
+    Only what the session brought: images and volumes you already had are never
+    deleted, and a tag the session replaced is given back to your image. Data
+    in the session's volumes is deleted with it. One edge case remains: an
+    image pulled by another process *while* a session is starting, and used by
+    it, is treated as the session's. Provided as is, under the MIT license.

@@ -96,16 +96,20 @@ Docker global options work as usual, e.g. `docker --context remote ephemeral ls`
 2. **Ownership.** Session resources are found by label: containers from `run`
    get `io.github.wendersoon.ephemeral.session=<id>`, and Compose projects run
    under the dedicated project name `ephemeral-<id>`. The images and volumes
-   used by those containers are recorded in the session state.
+   used by those containers when the session starts are recorded; anything
+   first used later is never considered the session's.
 3. **Teardown.** Containers, networks, volumes and images are removed in
    dependency order. An image or volume that is still used by a container
-   outside the session is kept and reported.
+   outside the session is kept and reported, and a tag the session took over
+   (e.g. by pulling a newer `postgres:17`) is given back to the original image.
 4. **Recovery.** State lives in `~/.docker/ephemeral/sessions`. If the plugin
    dies before cleaning up, `docker ephemeral gc` or `docker ephemeral down`
    finishes the job.
 
 ## Limitations
 
+- An image pulled by another process *while* a session is starting, and used
+  by it, is treated as the session's and removed with it.
 - `run` always runs in the foreground; use `up` for background workloads.
 - BuildKit cache is not pruned; use `docker builder prune` if needed.
 - Bind mounts are host directories and are never touched.
