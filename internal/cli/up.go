@@ -12,7 +12,7 @@ func newUpCommand(svc Service) *cobra.Command {
 	var req app.UpRequest
 
 	cmd := &cobra.Command{
-		Use:   "up [OPTIONS] [SERVICE...] [-- COMPOSE UP OPTIONS]",
+		Use:   "up [flags] [SERVICE...] [-- COMPOSE_UP_ARGS...]",
 		Short: "Start a Compose project as an ephemeral session",
 		Long: `Up starts a Docker Compose project under a dedicated project name and
 prints the session ID. Everything the project creates is removed by

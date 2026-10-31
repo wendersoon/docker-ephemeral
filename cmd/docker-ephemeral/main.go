@@ -43,9 +43,7 @@ func run(args []string) int {
 	svc := app.NewService(eng, session.NewFileStore(dir), reaper.New(eng))
 
 	root := cli.NewRootCommand(svc, cli.BuildInfo{Version: version.Version, Commit: version.Commit})
-	root.SetArgs(inv.Args)
-
-	err = root.ExecuteContext(context.Background())
+	err = cli.Execute(context.Background(), root, inv.Args)
 	var exitErr *cli.ExitError
 	if errors.As(err, &exitErr) {
 		return exitErr.Code

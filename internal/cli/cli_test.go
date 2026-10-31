@@ -51,8 +51,7 @@ func execute(svc Service, args ...string) (stdout, stderr string, err error) {
 	root := NewRootCommand(svc, BuildInfo{Version: "1.0.0", Commit: "abc"})
 	root.SetOut(&out)
 	root.SetErr(&errOut)
-	root.SetArgs(args)
-	err = root.Execute()
+	err = Execute(context.Background(), root, args)
 	return out.String(), errOut.String(), err
 }
 

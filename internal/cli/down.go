@@ -10,7 +10,7 @@ func newDownCommand(svc Service) *cobra.Command {
 	var all bool
 
 	cmd := &cobra.Command{
-		Use:   "down [SESSION...]",
+		Use:   "down [flags] [SESSION...]",
 		Short: "Remove sessions and every resource they created",
 		Long: `Down removes the given sessions, referenced by name, ID or ID prefix.
 Without arguments it removes the only active session.`,

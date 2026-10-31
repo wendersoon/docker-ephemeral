@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/wendersoon/docker-ephemeral/internal/app"
+	"github.com/wendersoon/docker-ephemeral/internal/plugin"
 )
 
 // Service is the application API used by the commands.
@@ -32,10 +33,11 @@ type ExitError struct {
 
 func (e *ExitError) Error() string { return fmt.Sprintf("exit status %d", e.Code) }
 
-// NewRootCommand builds the command tree.
+// NewRootCommand builds the "ephemeral" command tree, nested under a "docker"
+// parent so that help and usage read like any other docker subcommand.
 func NewRootCommand(svc Service, info BuildInfo) *cobra.Command {
 	root := &cobra.Command{
-		Use:   "docker ephemeral",
+		Use:   plugin.Name,
 		Short: "Run Docker workloads that leave no trace behind",
 		Long: `docker ephemeral runs containers and Compose projects inside a session.
 When the session ends, every container, network, volume and image it
@@ -53,5 +55,15 @@ created is removed. Resources that existed before are never touched.`,
 		newGCCommand(svc),
 		newVersionCommand(info),
 	)
+	docker := &cobra.Command{Use: "docker", SilenceUsage: true, SilenceErrors: true}
+	docker.CompletionOptions.DisableDefaultCmd = true
+	docker.AddCommand(root)
 	return root
+}
+
+// Execute runs cmd, built by NewRootCommand, with the plugin arguments.
+func Execute(ctx context.Context, cmd *cobra.Command, args []string) error {
+	root := cmd.Root()
+	root.SetArgs(append([]string{cmd.Name()}, args...))
+	return root.ExecuteContext(ctx)
 }
