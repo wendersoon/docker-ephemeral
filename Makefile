@@ -36,6 +36,10 @@ test-integration: ## Run integration tests (requires Docker)
 lint: ## Run linters
 	golangci-lint run
 
+.PHONY: vuln
+vuln: ## Check for known vulnerabilities
+	go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
 .PHONY: fmt
 fmt: ## Format the code
 	golangci-lint fmt

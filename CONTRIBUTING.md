@@ -19,6 +19,7 @@ make install           # install the plugin for your user
 make test              # unit tests
 make test-integration  # end-to-end tests against the local Docker engine
 make lint              # linters
+make vuln              # known vulnerabilities (govulncheck)
 ```
 
 Integration tests use an isolated `DOCKER_CONFIG` and never touch images you
