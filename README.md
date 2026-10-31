@@ -32,7 +32,7 @@ problem, but they:
 curl -fsSL https://raw.githubusercontent.com/wendersoon/docker-ephemeral/main/scripts/install.sh | sh
 ```
 
-Or from source (Go 1.23+):
+Or from source (Go 1.26+):
 
 ```sh
 make install

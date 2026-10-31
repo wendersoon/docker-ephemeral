@@ -23,6 +23,7 @@ jobs:
       - uses: golangci/golangci-lint-action@v9
         with:
           version: v2.15
+      - run: make vuln
 
   test:
     runs-on: ubuntu-latest
