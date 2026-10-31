@@ -8,7 +8,9 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
+	"time"
 )
 
 const testImage = "hello-world:latest"
@@ -138,4 +140,51 @@ func TestSharedImage_RemovedByLastSession(t *testing.T) {
 	if out := mustDocker(t, cfg, "image", "ls", "-q", testImage); out != "" {
 		t.Errorf("shared image survived the last session: %s", out)
 	}
+}
+
+func TestRun_CleansUpWhenDockerIsTerminated(t *testing.T) {
+	requireDocker(t)
+	cfg := dockerConfig(t)
+
+	cmd := exec.Command("docker", "ephemeral", "run", "busybox:1.36",
+		"sh", "-c", "trap 'exit 0' TERM; while :; do sleep 1; done")
+	cmd.Env = append(os.Environ(), "DOCKER_CONFIG="+cfg)
+	if err := cmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+
+	waitFor(t, func() bool { return mustDocker(t, cfg, "ephemeral", "ls", "-q") != "" })
+	waitFor(t, func() bool {
+		return mustDocker(t, cfg, "container", "ls", "-q", "--filter", "label=io.github.wendersoon.ephemeral.session") != ""
+	})
+	if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
+		t.Fatal(err)
+	}
+
+	done := make(chan struct{})
+	go func() {
+		_ = cmd.Wait() // the exit status depends on how docker reports the interruption
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(30 * time.Second):
+		_ = cmd.Process.Kill()
+		t.Fatal("plugin did not terminate")
+	}
+
+	if out := mustDocker(t, cfg, "ephemeral", "ls", "-q"); out != "" {
+		t.Errorf("session survived termination: %s", out)
+	}
+}
+
+func waitFor(t *testing.T, cond func() bool) {
+	t.Helper()
+	for range 60 {
+		if cond() {
+			return
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+	t.Fatal("condition not met in time")
 }
