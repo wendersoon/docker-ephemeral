@@ -17,7 +17,9 @@ import (
 type memStore struct{ sessions []*session.Session }
 
 func (m *memStore) Save(s *session.Session) error {
-	m.Delete(s.ID)
+	if err := m.Delete(s.ID); err != nil {
+		return err
+	}
 	m.sessions = append(m.sessions, s)
 	return nil
 }
@@ -62,7 +64,7 @@ func (f *fixture) composeStarts(running bool) {
 func TestRun_TearsDownAndPropagatesExitCode(t *testing.T) {
 	f := newFixture()
 	f.eng.ExitCode = 7
-	f.eng.OnCreate = func(args []string) engine.Container {
+	f.eng.OnCreate = func([]string) engine.Container {
 		f.eng.AddImage("img-pulled", "nginx:latest")
 		f.eng.AddVolume("vol-anon")
 		return engine.Container{ID: "c1", ImageID: "img-pulled", Volumes: []string{"vol-anon"}}
